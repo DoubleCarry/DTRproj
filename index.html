@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DTR — Daily Time Record</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+</head>
+<body>
+
+<div id="loginPage" class="hidden rel">
+  <div class="login-wrap">
+    <div class="login-hero">
+      <div class="login-logomark">⏱</div>
+      <h1 class="login-title">D<span>TR</span></h1>
+      <p class="login-tagline">Daily Time Record System</p>
+    </div>
+
+    <div class="login-card">
+      <div class="login-tabs">
+        <div class="login-tab active" data-auth="login" onclick="window.dtr.switchAuthMode('login')">Login</div>
+        <div class="login-tab" data-auth="signup" onclick="window.dtr.switchAuthMode('signup')">Sign Up</div>
+      </div>
+
+      <div class="login-form" id="loginFormPane">
+        <div class="input-group">
+          <label for="loginUsername">Username</label>
+          <input type="text" id="loginUsername" class="input-field" placeholder="Enter your username…" autocomplete="username">
+        </div>
+        <div class="input-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" class="input-field" placeholder="Enter your password…" autocomplete="current-password">
+        </div>
+        <div id="loginError" class="error-banner hidden">
+          <span>⚠</span><span id="loginErrorText">Invalid credentials.</span>
+        </div>
+        <button class="btn btn-primary btn-xl w-full" onclick="window.dtr.handleLogin()">Sign In →</button>
+      </div>
+
+      <div class="login-form hidden" id="signupFormPane">
+        <div class="input-group">
+          <label for="signupName">Full Name</label>
+          <input type="text" id="signupName" class="input-field" placeholder="Enter your full name…" autocomplete="name">
+        </div>
+        <div class="input-group">
+          <label for="signupUsername">Username</label>
+          <input type="text" id="signupUsername" class="input-field" placeholder="lowercase letters, numbers, underscore" autocomplete="username">
+        </div>
+        <div class="input-group">
+          <label for="signupPassword">Password</label>
+          <input type="password" id="signupPassword" class="input-field" placeholder="Create a password…" autocomplete="new-password">
+        </div>
+        <div class="input-group">
+          <label for="signupPasswordConfirm">Confirm Password</label>
+          <input type="password" id="signupPasswordConfirm" class="input-field" placeholder="Re-enter password…" autocomplete="new-password">
+        </div>
+        <div id="signupError" class="error-banner hidden">
+          <span>⚠</span><span id="signupErrorText">Unable to sign up.</span>
+        </div>
+        <button class="btn btn-primary btn-xl w-full" onclick="window.dtr.handleSignup()">Create Account →</button>
+      </div>
+
+      <div class="login-creds">
+        <div><span class="cred-label">Sample:</span> &nbsp;<span class="cred-val">john</span> &nbsp;/ <span class="cred-val">pass123</span></div>
+        <div><span class="cred-label">Or create:</span> &nbsp;<span class="cred-val">Sign Up</span> tab</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="appShell" class="hidden">
+  <nav class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo-icon">⏱</div>
+      <span class="topbar-wordmark">D<span>TR</span></span>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-clock mono" id="liveClock">--:--:-- --</div>
+      <div class="topbar-user">
+        <div class="topbar-avatar" id="topbarAvatar">?</div>
+        <div class="topbar-user-info">
+          <div class="topbar-name" id="topbarName">--</div>
+          <div class="topbar-role" id="topbarRole">--</div>
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-sm" id="themeToggleBtn" onclick="window.dtr.toggleTheme()">☀ Light</button>
+      <button class="btn btn-secondary btn-sm" onclick="window.dtr.openSettings()">⚙ Settings</button>
+      <button class="btn btn-danger btn-sm" onclick="window.dtr.handleLogout()">Sign Out</button>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div id="userDashboard" class="hidden">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Welcome back, <span id="userGreetName">--</span></h2>
+          <p class="section-sub" id="userGreetDate">Loading…</p>
+        </div>
+        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;">
+          <button class="btn btn-secondary btn-sm" onclick="window.dtr.openImportModal()">📥 Import DTR Text</button>
+          <button class="btn btn-secondary btn-sm" onclick="window.dtr.openExportModal()">⬇ Export DTR</button>
+        </div>
+      </div>
+
+      <div class="grid-progress" style="margin-bottom:1.4rem;">
+        <div class="progress-card">
+          <div class="card-title"><span class="ct-dot"></span>Goal Progress</div>
+          <div class="ring-wrap">
+            <svg class="ring-svg" width="170" height="170" viewBox="0 0 170 170">
+              <circle class="ring-track" cx="85" cy="85" r="75"></circle>
+              <circle class="ring-fill" id="progressRingFill" cx="85" cy="85" r="75"></circle>
+            </svg>
+            <div>
+              <div class="ring-center-pct" id="ringPct">0%</div>
+              <div class="ring-center-sub">Complete</div>
+            </div>
+          </div>
+          <div class="ring-stats">
+            <div class="ring-stat"><span class="val green" id="ringStat_logged">0h 0m</span><span class="lbl">Logged</span></div>
+            <div class="ring-stat"><span class="val yellow" id="ringStat_remaining">0h</span><span class="lbl">Remaining</span></div>
+            <div class="ring-stat"><span class="val purple" id="ringStat_overtime">0h 0m</span><span class="lbl">Overtime</span></div>
+          </div>
+        </div>
+
+        <div class="user-stats-grid">
+          <div class="stat-card"><div class="stat-card-label">Goal</div><div class="stat-card-value green" id="statGoal">300h</div><div class="stat-card-sub">Required total</div></div>
+          <div class="stat-card"><div class="stat-card-label">Days on Record</div><div class="stat-card-value blue" id="statDays">0</div><div class="stat-card-sub">Log entries</div></div>
+          <div class="stat-card stat-card-span">
+            <div class="stat-card-label">Attendance Summary</div>
+            <div class="summary-grid summary-grid-4">
+              <div class="summary-item">
+                <div class="summary-num green" id="statAttendance">0</div>
+                <div class="summary-label">Attendance</div>
+              </div>
+              <div class="summary-item">
+                <div class="summary-num yellow" id="statAbsence">0</div>
+                <div class="summary-label">Absence</div>
+              </div>
+              <div class="summary-item">
+                <div class="summary-num red" id="statLate">0</div>
+                <div class="summary-label">Late</div>
+              </div>
+              <div class="summary-item">
+                <div class="summary-num yellow" id="statUndertime">0</div>
+                <div class="summary-label">Undertime</div>
+              </div>
+            </div>
+            <div class="summary-meta">
+              <span id="statAttendanceContext">0% attendance rate</span>
+              <span id="statLateSub">Fixed schedule off</span>
+            </div>
+          </div>
+          <div class="stat-card status-card">
+            <div class="stat-card-label">Status</div>
+            <div class="stat-card-value" id="statStatus">In Progress</div>
+            <div class="stat-card-sub" id="statStatusSub">Current standing</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Predicted Completion</div>
+            <div class="stat-card-value blue" id="statPredictDate">—</div>
+            <div class="stat-card-sub" id="statPredictSub">Need work history</div>
+            <div class="stat-card-sub" id="statUpcomingHolidays">Upcoming holidays: none</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="entry-form-card">
+        <div class="card-title"><span class="ct-dot"></span>Add Time Entry</div>
+
+        <div class="entry-fields">
+          <div class="input-group">
+            <label for="entryDate">Date</label>
+            <div class="inline-row">
+              <input type="date" id="entryDate" class="input-field">
+              <button class="btn btn-secondary btn-sm" type="button" onclick="window.dtr.setTodayDate()">Today</button>
+            </div>
+          </div>
+
+          <div id="entryTimeFields" class="entry-time-grid">
+            <div class="input-group">
+              <label>Time In</label>
+              <div class="time-picker">
+                <select id="entryInHour" class="select-field time-wheel"><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option selected>08</option><option>09</option><option>10</option><option>11</option><option>12</option></select>
+                <span class="time-sep">:</span>
+                <select id="entryInMinute" class="select-field time-wheel"></select>
+                <select id="entryInMeridiem" class="select-field time-wheel"><option selected>AM</option><option>PM</option></select>
+              </div>
+              <input type="hidden" id="entryInTime">
+            </div>
+            <div class="input-group">
+              <label>Time Out</label>
+              <div class="time-picker">
+                <select id="entryOutHour" class="select-field time-wheel"><option>01</option><option>02</option><option>03</option><option>04</option><option selected>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option></select>
+                <span class="time-sep">:</span>
+                <select id="entryOutMinute" class="select-field time-wheel"></select>
+                <select id="entryOutMeridiem" class="select-field time-wheel"><option>AM</option><option selected>PM</option></select>
+              </div>
+              <input type="hidden" id="entryOutTime">
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="entryAbsent">Attendance</label>
+            <label class="toggle-row">
+              <div class="toggle-label">Mark as Absent<small>Log this date as no work day</small></div>
+              <span class="toggle-switch">
+                <input type="checkbox" id="entryAbsent" onchange="window.dtr.toggleEntryAbsent()">
+                <span class="toggle-track"></span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div id="entryAbsentNote" class="input-hint hidden" style="margin-top:0.65rem;">Time fields are skipped. This date will be recorded as absent with 0 hours.</div>
+
+        <div class="input-group" style="margin-top:0.85rem;">
+          <label for="entryNote">Note <span style="color:var(--text3);font-size:0.65rem;text-transform:none;">(optional)</span></label>
+          <input type="text" id="entryNote" class="input-field" placeholder="e.g. Sprint catch-up, half day…" maxlength="120">
+        </div>
+
+        <div class="entry-footer">
+          <div class="overtime-preview" id="overtimePreview"><span>🟣</span><span id="overtimePreviewText"></span></div>
+          <button class="btn btn-primary" onclick="window.dtr.handleAddEntry()">+ Add Entry</button>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-card-header">
+          <div class="card-title" style="margin-bottom:0"><span class="ct-dot"></span>Time Log History</div>
+          <button class="btn btn-danger btn-sm" onclick="window.dtr.clearAll()">Clear All</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>#</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Hours</th><th>Overtime</th><th>Note</th><th>Src</th><th>Action</th></tr>
+            </thead>
+            <tbody id="historyTbody"></tbody>
+          </table>
+          <div id="historyEmpty" class="table-empty" style="display:none;"><span class="empty-icon">📋</span>No records yet. Add your first entry above.</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminDashboard" class="hidden">
+      <div id="adminOverview">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Admin <span>Dashboard</span></h2>
+            <p class="section-sub">Manage users and monitor DTR progress</p>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="window.dtr.openAddUserModal()">+ Add User</button>
+        </div>
+
+        <div class="grid-3" style="margin-bottom:1.5rem;">
+          <div class="stat-card"><div class="stat-card-label">Total Users</div><div class="stat-card-value blue" id="adminStatUsers">0</div><div class="stat-card-sub">Registered</div></div>
+          <div class="stat-card"><div class="stat-card-label">Total Hours (All)</div><div class="stat-card-value green" id="adminStatHours">0h</div><div class="stat-card-sub">Combined logged</div></div>
+          <div class="stat-card"><div class="stat-card-label">Avg Completion</div><div class="stat-card-value yellow" id="adminStatAvg">0%</div><div class="stat-card-sub">Average progress</div></div>
+        </div>
+
+        <div style="margin-bottom:0.8rem;">
+          <div class="section-title" style="font-size:1rem;">Users</div>
+          <p class="section-sub">Click a card to view full DTR details</p>
+        </div>
+        <div class="admin-user-grid" id="adminUserGrid"></div>
+      </div>
+
+      <div id="adminUserDetail" class="hidden">
+        <button class="back-btn" onclick="window.dtr.adminBackToOverview()">← Back to overview</button>
+        <div class="section-header">
+          <div>
+            <h2 class="section-title"><span id="adminDetailTitle">User</span><span style="color:var(--text)"> Records</span></h2>
+            <p class="section-sub mono" id="adminDetailUsername">@-- · Goal: --h</p>
+          </div>
+          <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="window.dtr.adminExportCSV()">⬇ CSV</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.dtr.adminExportPrint()">🖨 Print</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.dtr.openEditUserGoal()">⚙ Edit Goal</button>
+            <button class="btn btn-danger btn-sm" onclick="window.dtr.adminDeleteUser()">Delete User</button>
+          </div>
+        </div>
+
+        <div class="grid-4" style="margin-bottom:1.4rem;" id="adminDetailStats"></div>
+
+        <div class="table-card">
+          <div class="table-card-header"><div class="card-title" style="margin-bottom:0"><span class="ct-dot"></span>Time Log History</div></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Hours</th><th>Overtime</th><th>Note</th><th>Src</th></tr></thead>
+              <tbody id="adminDetailTbody"></tbody>
+            </table>
+            <div id="adminDetailEmpty" class="table-empty" style="display:none;"><span class="empty-icon">📋</span>No records for this user.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="settingsModal" class="modal-overlay hidden">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <div class="modal-icon">
+        <div class="icon-wrap">⚙</div>
+        <div><div class="modal-title">Settings & Goals</div><div class="modal-subtitle">Adjust your DTR configuration</div></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('settingsModal')">✕</button>
+    </div>
+      <div class="modal-body">
+        <div class="input-group"><label>Display Name</label><input type="text" id="settingName" class="input-field" placeholder="Your full name"></div>
+        <div class="input-group"><label>Username</label><input type="text" id="settingUsername" class="input-field" placeholder="e.g. john_reyes"><span class="input-hint">Changing username migrates your account key and existing records.</span></div>
+        <div class="input-group"><label>Required Hours (Goal)</label><input type="number" id="settingGoal" class="input-field" placeholder="e.g. 300" min="1" max="9999"><span class="input-hint">Total hours required to complete your term</span></div>
+      <div class="input-group"><label>Target Completion Date</label><input type="date" id="settingTargetDate" class="input-field"><span class="input-hint">Used for deadline risk status (safe / need overtime / not finish).</span></div>
+      <div class="input-group"><label>Standard Daily Hours</label><input type="number" id="settingDaily" class="input-field" placeholder="e.g. 8" min="1" max="24" step="0.5"><span class="input-hint">Hours beyond this per day are counted as overtime</span></div>
+      <label class="toggle-row">
+        <div class="toggle-label">Enable overtime<small>When disabled, overtime is forced to 0 on all entries (including existing logs).</small></div>
+        <span class="toggle-switch"><input type="checkbox" id="settingOvertimeEnabled"><span class="toggle-track"></span></span>
+      </label>
+      <label class="toggle-row">
+        <div class="toggle-label">Enable fixed schedule<small>When enabled, only hours inside schedule are counted. Also tracks late and undertime.</small></div>
+        <span class="toggle-switch"><input type="checkbox" id="settingLateEnabled"><span class="toggle-track"></span></span>
+      </label>
+      <div class="grid-2">
+        <div class="input-group">
+          <label>Schedule Start</label>
+          <div class="time-picker">
+            <select id="scheduleStartHour" class="select-field time-wheel"><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option selected>08</option><option>09</option><option>10</option><option>11</option><option>12</option></select>
+            <span class="time-sep">:</span>
+            <select id="scheduleStartMinute" class="select-field time-wheel"></select>
+            <select id="scheduleStartMeridiem" class="select-field time-wheel"><option selected>AM</option><option>PM</option></select>
+          </div>
+        </div>
+        <div class="input-group">
+          <label>Schedule End</label>
+          <div class="time-picker">
+            <select id="scheduleEndHour" class="select-field time-wheel"><option>01</option><option>02</option><option>03</option><option>04</option><option selected>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option></select>
+            <span class="time-sep">:</span>
+            <select id="scheduleEndMinute" class="select-field time-wheel"></select>
+            <select id="scheduleEndMeridiem" class="select-field time-wheel"><option>AM</option><option selected>PM</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="input-group">
+        <label>Manual Holidays — Add Dates</label>
+        <textarea id="settingHolidayAdd" class="input-field import-textarea" placeholder="One YYYY-MM-DD per line. These dates become non-working days."></textarea>
+      </div>
+      <div class="input-group">
+        <label>Manual Holiday Overrides — Remove Built-ins</label>
+        <textarea id="settingHolidayRemove" class="input-field import-textarea" placeholder="One YYYY-MM-DD per line. Removes built-in PH holiday effect for these dates."></textarea>
+      </div>
+      <div class="divider"></div>
+      <label class="toggle-row">
+        <div class="toggle-label">Enable fixed lunch deduction<small>Overlap minutes in the lunch window are deducted from each worked day.</small></div>
+        <span class="toggle-switch"><input type="checkbox" id="settingLunchEnabled"><span class="toggle-track"></span></span>
+      </label>
+      <div class="grid-2">
+        <div class="input-group">
+          <label>Lunch Start</label>
+          <div class="time-picker">
+            <select id="lunchStartHour" class="select-field time-wheel"><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option selected>11</option><option>12</option></select>
+            <span class="time-sep">:</span>
+            <select id="lunchStartMinute" class="select-field time-wheel"></select>
+            <select id="lunchStartMeridiem" class="select-field time-wheel"><option selected>AM</option><option>PM</option></select>
+          </div>
+        </div>
+        <div class="input-group">
+          <label>Lunch End</label>
+          <div class="time-picker">
+            <select id="lunchEndHour" class="select-field time-wheel"><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option selected>12</option></select>
+            <span class="time-sep">:</span>
+            <select id="lunchEndMinute" class="select-field time-wheel"></select>
+            <select id="lunchEndMeridiem" class="select-field time-wheel"><option>AM</option><option selected>PM</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="input-group"><label>Current Password</label><input type="password" id="settingCurrentPassword" class="input-field" placeholder="Required to change password" autocomplete="current-password"></div>
+      <div class="grid-2">
+        <div class="input-group"><label>New Password</label><input type="password" id="settingNewPassword" class="input-field" placeholder="Leave blank to keep current password" autocomplete="new-password"></div>
+        <div class="input-group"><label>Confirm New Password</label><input type="password" id="settingConfirmPassword" class="input-field" placeholder="Re-enter new password" autocomplete="new-password"></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('settingsModal')">Cancel</button><button class="btn btn-primary" onclick="window.dtr.saveSettings()">Save Changes</button></div>
+  </div>
+</div>
+
+<div id="exportModal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-icon"><div class="icon-wrap">⬇</div><div><div class="modal-title">Export DTR</div><div class="modal-subtitle">Choose export type and template</div></div></div>
+      <button class="modal-close" onclick="closeModal('exportModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="export-options">
+        <div class="input-group">
+          <label>Export Type</label>
+          <select id="exportTemplateType" class="select-field" onchange="window.dtr.updateExportTemplateUI()">
+            <option value="quick" selected>Quick Export (Default)</option>
+            <option value="university">University / OJT Template</option>
+            <option value="custom">Custom Template (Advanced)</option>
+          </select>
+        </div>
+
+        <div id="exportMetaFields" class="grid-2 hidden">
+          <div class="input-group"><label>Header Title</label><input id="exportTitle" class="input-field" placeholder="Daily Time Record"></div>
+          <div class="input-group"><label>Logo URL (optional)</label><input id="exportLogoUrl" class="input-field" placeholder="https://.../logo.png"></div>
+          <div class="input-group"><label>Organization / School</label><input id="exportOrganization" class="input-field" placeholder="Your university or organization"></div>
+          <div class="input-group"><label>Student Name</label><input id="exportStudentName" class="input-field" placeholder="Student full name"></div>
+          <div class="input-group"><label>Student ID</label><input id="exportStudentId" class="input-field" placeholder="ID number"></div>
+          <div class="input-group"><label>Program / Course</label><input id="exportProgram" class="input-field" placeholder="Program / course"></div>
+          <div class="input-group" style="grid-column:span 2;">
+            <label>Additional Info</label>
+            <div id="exportAdditionalInfoList" class="export-additional-list"></div>
+            <button class="btn btn-secondary btn-sm" type="button" onclick="window.dtr.addExportAdditionalInfoRow()">+ Add</button>
+          </div>
+          <div class="input-group" style="grid-column:span 2;"><label>Additional Details</label><input id="exportDetails" class="input-field" placeholder="Address, supervisor, or notes"></div>
+        </div>
+
+        <div id="exportCustomTemplateWrap" class="input-group hidden">
+          <label>Custom HTML Template</label>
+          <textarea id="exportCustomTemplate" class="input-field import-textarea" placeholder="Use placeholders like: {{title}}, {{student_name}}, {{organization}}, {{rows}}, {{summary_total_logged}}, {{generated_at}}"></textarea>
+          <small class="modal-subtitle">Tip: Include <code>{{rows}}</code> where the table rows should appear.</small>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="window.dtr.doExportCSV()">Export CSV</button>
+      <button class="btn btn-primary" onclick="window.dtr.doExportPrint()">Print / Save PDF</button>
+      <button class="btn btn-ghost" onclick="closeModal('exportModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="importModal" class="modal-overlay hidden">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <div class="modal-icon"><div class="icon-wrap">📥</div><div><div class="modal-title">Import DTR Text</div><div class="modal-subtitle">Paste raw DTR lines to parse dates and time pairs</div></div></div>
+      <button class="modal-close" onclick="closeModal('importModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="input-group">
+        <label>Raw DTR Text</label>
+        <textarea id="importText" class="input-field import-textarea" placeholder="Example: 03/25/2026 8:00 AM - 5:00 PM&#10;Mar 26, 2026 08:30 17:45&#10;2026-03-27 absent"></textarea>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>#</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Note</th></tr></thead><tbody id="importPreviewTbody"></tbody></table>
+        <div id="importPreviewEmpty" class="table-empty">No parsed entries yet. Click Preview.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('importModal')">Cancel</button>
+      <button class="btn btn-secondary" onclick="window.dtr.previewImport()">Preview</button>
+      <button class="btn btn-primary" onclick="window.dtr.importParsedEntries()">Import Entries</button>
+    </div>
+  </div>
+</div>
+
+<div id="editEntryModal" class="modal-overlay hidden">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div class="modal-icon"><div class="icon-wrap">✎</div><div><div class="modal-title">Edit Entry</div><div class="modal-subtitle">Update this time record</div></div></div>
+      <button class="modal-close" onclick="closeModal('editEntryModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="input-group"><label>Date</label><input type="date" id="editEntryDate" class="input-field"></div>
+      <label class="toggle-row">
+        <div class="toggle-label">Mark as Absent<small>Skip time fields and set this record to 0 hours</small></div>
+        <span class="toggle-switch"><input type="checkbox" id="editEntryAbsent"><span class="toggle-track"></span></span>
+      </label>
+      <div id="editTimeFields" class="grid-2">
+        <div class="input-group">
+          <label>Time In</label>
+          <div class="time-picker">
+            <select id="editInHour" class="select-field time-wheel"><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option selected>08</option><option>09</option><option>10</option><option>11</option><option>12</option></select>
+            <span class="time-sep">:</span>
+            <select id="editInMinute" class="select-field time-wheel"></select>
+            <select id="editInMeridiem" class="select-field time-wheel"><option selected>AM</option><option>PM</option></select>
+          </div>
+          <input type="hidden" id="editInTime">
+        </div>
+        <div class="input-group">
+          <label>Time Out</label>
+          <div class="time-picker">
+            <select id="editOutHour" class="select-field time-wheel"><option>01</option><option>02</option><option>03</option><option>04</option><option selected>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option></select>
+            <span class="time-sep">:</span>
+            <select id="editOutMinute" class="select-field time-wheel"></select>
+            <select id="editOutMeridiem" class="select-field time-wheel"><option>AM</option><option selected>PM</option></select>
+          </div>
+          <input type="hidden" id="editOutTime">
+        </div>
+      </div>
+      <div class="overtime-preview" id="editOvertimePreview"><span>🟣</span><span id="editOvertimePreviewText"></span></div>
+      <div class="input-group"><label>Notes</label><input type="text" id="editEntryNote" class="input-field" placeholder="Add a note (optional)"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('editEntryModal')">Cancel</button><button class="btn btn-primary" onclick="window.dtr.saveEditEntry()">Save Changes</button></div>
+  </div>
+</div>
+
+<div id="addUserModal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-icon"><div class="icon-wrap">👤</div><div><div class="modal-title">Add New User</div><div class="modal-subtitle">Create a regular user account</div></div></div>
+      <button class="modal-close" onclick="closeModal('addUserModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="grid-2">
+        <div class="input-group"><label>Full Name</label><input type="text" id="newUserName" class="input-field" placeholder="e.g. Maria Santos"></div>
+        <div class="input-group"><label>Username</label><input type="text" id="newUserUsername" class="input-field" placeholder="e.g. maria" autocomplete="off"></div>
+      </div>
+      <div class="input-group"><label>Password</label><input type="password" id="newUserPassword" class="input-field" placeholder="Set a password" autocomplete="new-password"></div>
+      <div class="grid-2">
+        <div class="input-group"><label>Required Hours Goal</label><input type="number" id="newUserGoal" class="input-field" value="300" min="1"></div>
+        <div class="input-group"><label>Daily Standard Hours</label><input type="number" id="newUserDaily" class="input-field" value="8" min="1" max="24" step="0.5"></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('addUserModal')">Cancel</button><button class="btn btn-primary" onclick="window.dtr.handleAddUser()">Create User</button></div>
+  </div>
+</div>
+
+<div id="adminEditUserModal" class="modal-overlay hidden">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div class="modal-icon"><div class="icon-wrap">⚙</div><div><div class="modal-title">Edit User Goal</div><div class="modal-subtitle">Update this user's hour targets</div></div></div>
+      <button class="modal-close" onclick="closeModal('adminEditUserModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="input-group"><label>Required Hours Goal</label><input type="number" id="adminEditGoal" class="input-field" min="1"></div>
+      <div class="input-group"><label>Standard Daily Hours</label><input type="number" id="adminEditDaily" class="input-field" min="1" max="24" step="0.5"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('adminEditUserModal')">Cancel</button><button class="btn btn-primary" onclick="window.dtr.saveEditUserGoal()">Save</button></div>
+  </div>
+</div>
+
+<div id="confirmModal" class="modal-overlay hidden">
+  <div class="modal modal-sm confirm-modal">
+    <div class="modal-header">
+      <div class="modal-title" id="confirmTitle">Confirm Action</div>
+      <button class="modal-close" onclick="closeModal('confirmModal')">✕</button>
+    </div>
+    <div class="confirm-body" id="confirmBody"></div>
+    <div class="modal-footer"><button id="confirmNoBtn" class="btn btn-ghost">Cancel</button><button id="confirmYesBtn" class="btn btn-danger">Confirm</button></div>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+/* ═══════════════════════════════════════════════
+   DTR — BASE STYLES & CSS VARIABLES
+   ═══════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;500;600;700;800&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Background layers */
+  --bg:       #0a0c10;
+  --bg2:      #10131a;
+  --bg3:      #161b26;
+  --card:     #1c2132;
+  --card2:    #202840;
+
+  /* Borders */
+  --border:   rgba(255, 255, 255, 0.06);
+  --border2:  rgba(255, 255, 255, 0.11);
+  --border3:  rgba(255, 255, 255, 0.18);
+
+  /* Accent palette */
+  --accent:   #4fffb0;
+  --accent2:  #00c9ff;
+  --accent3:  #ff6b6b;
+  --accent4:  #ffd166;
+  --accent5:  #c77dff;
+
+  /* Text */
+  --text:     #e8eaf2;
+  --text2:    #8892b0;
+  --text3:    #4a5270;
+
+  /* Semantic */
+  --success:  #4fffb0;
+  --warning:  #ffd166;
+  --danger:   #ff6b6b;
+  --info:     #00c9ff;
+  --overtime: #c77dff;
+
+  /* Spacing */
+  --radius:    14px;
+  --radius-sm:  8px;
+  --radius-lg: 20px;
+
+  /* Shadows */
+  --shadow:       0 8px 32px rgba(0, 0, 0, 0.45);
+  --shadow-glow:  0 0 60px rgba(79, 255, 176, 0.08);
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.3);
+}
+
+body.light-theme {
+  --bg:       #f4f7fb;
+  --bg2:      #edf2f8;
+  --bg3:      #e3eaf4;
+  --card:     #ffffff;
+  --card2:    #f7faff;
+  --border:   rgba(18, 36, 72, 0.10);
+  --border2:  rgba(18, 36, 72, 0.18);
+  --border3:  rgba(18, 36, 72, 0.26);
+  --text:     #1d2638;
+  --text2:    #4d5d7d;
+  --text3:    #7887a3;
+  --shadow:       0 8px 30px rgba(22, 37, 76, 0.12);
+  --shadow-glow:  0 0 50px rgba(0, 201, 255, 0.07);
+  --shadow-card:  0 2px 14px rgba(22, 37, 76, 0.08);
+}
+
+body.light-theme::before {
+  background:
+    radial-gradient(ellipse 90% 55% at 50% -5%,  rgba(0, 201, 255, 0.08) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 40% at 95% 85%,  rgba(79, 255, 176, 0.07) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 30% at  5% 70%,  rgba(199, 125, 255, 0.05) 0%, transparent 50%);
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Ambient background glow */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 90% 55% at 50% -5%,  rgba(79, 255, 176, 0.05) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 40% at 95% 85%,  rgba(0, 201, 255, 0.04) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 30% at  5% 70%,  rgba(199, 125, 255, 0.03) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar          { width: 5px; height: 5px; }
+::-webkit-scrollbar-track    { background: var(--bg2); }
+::-webkit-scrollbar-thumb    { background: var(--bg3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--card); }
+
+/* ─── TYPOGRAPHY ─── */
+.mono { font-family: 'DM Mono', monospace; }
+
+h1, h2, h3, h4 { letter-spacing: -0.025em; }
+
+/* ─── UTILITY ─── */
+.hidden   { display: none !important; }
+.sr-only  { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+
+/* ─── RELATIVE WRAPPER ─── */
+.rel { position: relative; z-index: 1; }
