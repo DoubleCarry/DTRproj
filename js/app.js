@@ -24,7 +24,7 @@ initConfirmDialog();
 // Expose functions globally (called from HTML onclick attributes)
 window.dtr = {
   handleLogin, handleLogout,
-  switchAuthMode, handleSignup,
+  switchAuthMode, switchLoginRole: switchAuthMode, handleSignup,
   handleAddEntry, deleteEntry, clearAll,
   openEditEntry, saveEditEntry,
   openSettings, saveSettings,
@@ -96,6 +96,7 @@ function switchAuthMode(mode) {
   document.getElementById('signupFormPane')?.classList.toggle('hidden', _authMode !== 'signup');
 }
 window.dtr.switchAuthMode = switchAuthMode;
+window.dtr.switchLoginRole = switchAuthMode;
 
 function handleLogin() {
   const username = val('loginUsername').trim();
