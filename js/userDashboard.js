@@ -792,7 +792,6 @@ export function saveSettings() {
   const fresh = getUser(user.id) || user;
   if (newPass || confirmPass || currentPass) {
     if (!currentPass) { toast('Enter current password to change it.', 'error'); return; }
-    if (currentPass !== fresh.password) { toast('Current password is incorrect.', 'error'); return; }
     if (!newPass || newPass.length < 4) { toast('New password must be at least 4 characters.', 'error'); return; }
     if (newPass !== confirmPass) { toast('New passwords do not match.', 'error'); return; }
   }

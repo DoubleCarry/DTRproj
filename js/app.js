@@ -3,7 +3,7 @@
  * Handles login, logout, session restore, and wires all modules together.
  */
 
-import { seedDefaults, getUsers, setUsers, getCurrentUser, setCurrentUser, getUser } from './storage.js';
+import { seedDefaults, saveUser, getCurrentUser, setCurrentUser } from './storage.js';
 import { toast, openModal, closeModal, startClock, setTopbarUser, initModalOverlayClose, initConfirmDialog, val } from './ui.js';
 import {
   initUserDashboard, handleAddEntry, deleteEntry, clearAll,
@@ -12,7 +12,7 @@ import {
   setTodayDate, toggleEntryAbsent, setMeridiem, setEditMeridiem, updateEditOvertimePreview, updateExportTemplateUI, addExportAdditionalInfoRow,
 } from './userDashboard.js';
 import { renderAdminDashboard, showUserDetail, adminBackToOverview, openAddUserModal, handleAddUser, openEditUserGoal, saveEditUserGoal, adminDeleteUser, adminExportCSV, adminExportPrint } from './adminDashboard.js';
-import { apiLogin, apiSignup, setApiToken } from './api.js';
+import { apiLogin, apiSignup, apiMe, hasApiToken, setApiToken } from './api.js';
 
 const THEME_KEY = 'dtr_theme';
 let _authMode = 'login';
@@ -50,17 +50,18 @@ window.openModal  = openModal;
 window.closeModal = closeModal;
 
 /* ─── SESSION RESTORE ─── */
-const existing = getCurrentUser();
-if (existing) {
-  const fresh = getUser(existing.id);
-  if (fresh) {
-    setCurrentUser(fresh);
-    launchApp(fresh);
-  } else {
+if (hasApiToken()) {
+  apiMe().then(({ user }) => {
+    saveUser(user);
+    setCurrentUser(user);
+    launchApp(user);
+  }).catch(() => {
+    setApiToken(null);
     setCurrentUser(null);
     showLogin();
-  }
+  });
 } else {
+  setCurrentUser(null);
   showLogin();
 }
 
@@ -113,25 +114,16 @@ function handleLogin() {
     return;
   }
 
-  const users = getUsers();
-  const user = Object.values(users).find(u => u.username === username);
-  if (!user || user.password !== password) {
-    if (errText) errText.textContent = 'Invalid username or password.';
+  apiLogin(username, password).then(({ token, user }) => {
+    setApiToken(token);
+    saveUser(user);
+    setCurrentUser(user);
+    launchApp(user);
+  }).catch((e) => {
+    if (errText) errText.textContent = e.message || 'Invalid username or password.';
     errEl.classList.remove('hidden');
     document.getElementById('loginPassword').value = '';
-    return;
-  }
-  if (user.role === 'admin') {
-    if (errText) errText.textContent = 'Admin login is disabled on this screen.';
-    errEl.classList.remove('hidden');
-    return;
-  }
-  setCurrentUser(user);
-  launchApp(user);
-
-  apiLogin(username, password).then(({ token }) => {
-    setApiToken(token);
-  }).catch(() => {});
+  });
 }
 
 function handleSignup() {
@@ -164,38 +156,17 @@ function handleSignup() {
     return;
   }
 
-  const users = getUsers();
-  if (Object.values(users).some(u => u.username === username)) {
-    if (errText) errText.textContent = 'Username already exists. Please choose another.';
-    errEl?.classList.remove('hidden');
-    return;
-  }
-  const newUser = {
-    id: username,
-    name,
-    username,
-    password,
-    role: 'user',
-    goal: 300,
-    targetDate: '',
-    dailyHours: 8,
-    overtimeEnabled: true,
-    lateTrackingEnabled: false,
-    scheduleStart: '08:00',
-    scheduleEnd: '17:00',
-    lunchBreak: { enabled: false, start: '11:20', end: '12:20' },
-    firstTimeSetup: true,
-  };
-  users[newUser.id] = newUser;
-  setUsers(users);
-  setCurrentUser(newUser);
-  launchApp(newUser);
-  openSettings();
-  toast('Account created. Please complete your setup.', 'success');
-
-  apiSignup(name, username, password).then(({ token }) => {
+  apiSignup(name, username, password).then(({ token, user }) => {
     setApiToken(token);
-  }).catch(() => {});
+    saveUser(user);
+    setCurrentUser(user);
+    launchApp(user);
+    openSettings();
+    toast('Account created. Please complete your setup.', 'success');
+  }).catch((e) => {
+    if (errText) errText.textContent = e.message || 'Unable to sign up.';
+    errEl?.classList.remove('hidden');
+  });
 }
 
 window.dtr.handleSignup = handleSignup;
