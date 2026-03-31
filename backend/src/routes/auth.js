@@ -59,7 +59,6 @@ router.post('/login', async (req, res) => {
   if (!user) return res.status(401).json({ error: 'Invalid credentials' });
   const ok = await bcrypt.compare(String(password), user.passwordHash);
   if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
-  if (user.role === 'admin') return res.status(403).json({ error: 'Admin login is disabled from this UI' });
 
   const token = signToken(user._id.toString());
   return res.json({ token, user: toUserDTO(user) });

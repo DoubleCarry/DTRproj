@@ -94,7 +94,7 @@ function switchAuthMode(mode) {
   document.querySelectorAll('.login-tab').forEach(t =>
     t.classList.toggle('active', t.dataset.auth === _authMode),
   );
-  document.getElementById('loginFormPane')?.classList.toggle('hidden', _authMode !== 'login');
+  document.getElementById('loginFormPane')?.classList.toggle('hidden', _authMode === 'signup');
   document.getElementById('signupFormPane')?.classList.toggle('hidden', _authMode !== 'signup');
 }
 window.dtr.switchAuthMode = switchAuthMode;
