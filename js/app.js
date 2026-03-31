@@ -12,6 +12,7 @@ import {
   setTodayDate, toggleEntryAbsent, setMeridiem, setEditMeridiem, updateEditOvertimePreview, updateExportTemplateUI, addExportAdditionalInfoRow,
 } from './userDashboard.js';
 import { renderAdminDashboard, showUserDetail, adminBackToOverview, openAddUserModal, handleAddUser, openEditUserGoal, saveEditUserGoal, adminDeleteUser, adminExportCSV, adminExportPrint } from './adminDashboard.js';
+import { apiLogin, apiSignup, setApiToken } from './api.js';
 
 const THEME_KEY = 'dtr_theme';
 let _authMode = 'login';
@@ -113,23 +114,24 @@ function handleLogin() {
   }
 
   const users = getUsers();
-  const user  = Object.values(users).find(u => u.username === username);
-
+  const user = Object.values(users).find(u => u.username === username);
   if (!user || user.password !== password) {
     if (errText) errText.textContent = 'Invalid username or password.';
     errEl.classList.remove('hidden');
     document.getElementById('loginPassword').value = '';
     return;
   }
-
   if (user.role === 'admin') {
     if (errText) errText.textContent = 'Admin login is disabled on this screen.';
     errEl.classList.remove('hidden');
     return;
   }
-
   setCurrentUser(user);
   launchApp(user);
+
+  apiLogin(username, password).then(({ token }) => {
+    setApiToken(token);
+  }).catch(() => {});
 }
 
 function handleSignup() {
@@ -168,7 +170,6 @@ function handleSignup() {
     errEl?.classList.remove('hidden');
     return;
   }
-
   const newUser = {
     id: username,
     name,
@@ -185,13 +186,16 @@ function handleSignup() {
     lunchBreak: { enabled: false, start: '11:20', end: '12:20' },
     firstTimeSetup: true,
   };
-
   users[newUser.id] = newUser;
   setUsers(users);
   setCurrentUser(newUser);
   launchApp(newUser);
   openSettings();
   toast('Account created. Please complete your setup.', 'success');
+
+  apiSignup(name, username, password).then(({ token }) => {
+    setApiToken(token);
+  }).catch(() => {});
 }
 
 window.dtr.handleSignup = handleSignup;
@@ -227,6 +231,7 @@ function launchApp(user) {
 
 /* ─── LOGOUT ─── */
 function handleLogout() {
+  setApiToken(null);
   setCurrentUser(null);
   document.getElementById('appShell').classList.add('hidden');
   document.getElementById('userDashboard').classList.add('hidden');

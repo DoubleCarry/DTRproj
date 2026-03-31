@@ -13,9 +13,28 @@ import {
 } from './utils.js';
 import { toast, openModal, closeModal, setProgressRing, setTopbarUser, val, setVal, setText } from './ui.js';
 import { exportCSV, exportPrint } from './export.js';
+import {
+  apiListSessions, apiCreateSession, apiUpdateSession, apiDeleteSession, apiClearSessions, apiUpdateSettings,
+} from './api.js';
 
 let _editingEntryId = null;
 let _importPreview = [];
+
+function apiSessionToLocal(s) {
+  return {
+    id: String(s._id || s.id || uid()),
+    date: s.date,
+    timeIn: s.timeIn ?? '--',
+    timeOut: s.timeOut ?? '--',
+    hours: Number(s.hours ?? 0),
+    overtime: Number(s.overtime ?? 0),
+    source: s.source || 'manual',
+    note: s.note || '',
+    absent: !!s.absent,
+    late: !!s.late,
+    undertime: !!s.undertime,
+  };
+}
 
 function currentUserFresh() {
   const user = getCurrentUser();
@@ -272,7 +291,13 @@ export function initUserDashboard() {
     document.getElementById(id)?.addEventListener('input', updateEntryPreview);
   });
 
-  refresh();
+  apiListSessions().then(({ sessions }) => {
+    const u = currentUserFresh();
+    if (u) setSessions(u.id, (sessions || []).map(apiSessionToLocal));
+    refresh();
+  }).catch(() => {
+    refresh();
+  });
 }
 
 /* ─── REFRESH ALL ─── */
@@ -542,6 +567,13 @@ export function handleAddEntry() {
   const sessions = getSessions(user.id);
   sessions.push(entry);
   setSessions(user.id, sessions);
+  apiCreateSession(entry).then(({ session }) => {
+    const latest = getSessions(user.id).map(s => (s.id === entry.id ? apiSessionToLocal(session) : s));
+    setSessions(user.id, latest);
+    refresh();
+  }).catch(() => {
+    // local-only mode is acceptable; ignore API sync failure
+  });
 
   if (absent) toast(`Marked ${fmtDate(date)} as absent.`, 'info');
 
@@ -668,6 +700,7 @@ export function saveEditEntry() {
   }
 
   setSessions(user.id, sessions);
+  apiUpdateSession(entryId, sessions[idx]).catch(() => {});
   closeModal('editEntryModal');
   _editingEntryId = null;
   toast('Entry updated.', 'success');
@@ -680,6 +713,7 @@ export async function deleteEntry(entryId) {
   if (!ok) return;
   const user = getCurrentUser();
   removeSession(user.id, entryId);
+  apiDeleteSession(entryId).catch(() => {});
   toast('Entry removed.', 'info');
   refresh();
 }
@@ -690,6 +724,7 @@ export async function clearAll() {
   if (!ok) return;
   const user = getCurrentUser();
   clearSessions(user.id);
+  apiClearSessions().catch(() => {});
   toast('All records cleared.', 'info');
   refresh();
 }
@@ -794,6 +829,31 @@ export function saveSettings() {
 
   saveUser(activeUser);
   setCurrentUser(activeUser);
+  const apiPayload = {
+    name: activeUser.name,
+    username: activeUser.username,
+    goal: activeUser.goal,
+    targetDate: activeUser.targetDate,
+    dailyHours: activeUser.dailyHours,
+    overtimeEnabled: activeUser.overtimeEnabled,
+    lateTrackingEnabled: activeUser.lateTrackingEnabled,
+    scheduleStart: activeUser.scheduleStart,
+    scheduleEnd: activeUser.scheduleEnd,
+    lunchBreak: activeUser.lunchBreak,
+    manualHolidaysAdd: activeUser.manualHolidaysAdd,
+    manualHolidaysRemove: activeUser.manualHolidaysRemove,
+    exportProfile: activeUser.exportProfile || {},
+    currentPassword: currentPass || undefined,
+    newPassword: newPass || undefined,
+    confirmPassword: confirmPass || undefined,
+  };
+  apiUpdateSettings(apiPayload).then(({ user: apiUser }) => {
+    saveUser(apiUser);
+    setCurrentUser(apiUser);
+    setTopbarUser(apiUser);
+    setText('userGreetName', firstName(apiUser.name));
+    refresh();
+  }).catch(() => {});
   recalcAllSessions(activeUser);
   setTopbarUser(activeUser);
   setText('userGreetName', firstName(activeUser.name));
@@ -919,6 +979,12 @@ export function importParsedEntries() {
     return;
   }
   setSessions(user.id, [...sessions, ...deduped]);
+  Promise.all(deduped.map(row => apiCreateSession(row).catch(() => null))).then(() => {
+    apiListSessions().then(({ sessions: remote }) => {
+      setSessions(user.id, (remote || []).map(apiSessionToLocal));
+      refresh();
+    }).catch(() => {});
+  });
   closeModal('importModal');
   toast(`Imported ${deduped.length} entries.`, 'success');
   refresh();
