@@ -14,6 +14,7 @@ import {
 import { renderAdminDashboard, showUserDetail, adminBackToOverview, openAddUserModal, handleAddUser, openEditUserGoal, saveEditUserGoal, adminDeleteUser, adminExportCSV, adminExportPrint } from './adminDashboard.js';
 
 const THEME_KEY = 'dtr_theme';
+let _authMode = 'login';
 
 /* ─── BOOT ─── */
 seedDefaults();
@@ -63,7 +64,6 @@ if (existing) {
 }
 
 /* ─── LOGIN ─── */
-let _authMode = 'login';
 
 function showLogin() {
   document.getElementById('loginPage').classList.remove('hidden');
