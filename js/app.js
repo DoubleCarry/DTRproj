@@ -9,6 +9,7 @@ import {
   initUserDashboard, handleAddEntry, deleteEntry, clearAll,
   openSettings, saveSettings, openExportModal, doExportCSV, doExportPrint,
   openEditEntry, saveEditEntry, openImportModal, previewImport, importParsedEntries,
+  handleImportFileSelect,
   setTodayDate, toggleEntryAbsent, setMeridiem, setEditMeridiem, updateEditOvertimePreview, updateExportTemplateUI, addExportAdditionalInfoRow,
 } from './userDashboard.js';
 import { renderAdminDashboard, showUserDetail, adminBackToOverview, openAddUserModal, handleAddUser, openEditUserGoal, saveEditUserGoal, adminDeleteUser, adminExportCSV, adminExportPrint, openAdminResetPasswordModal, adminResetUserPassword } from './adminDashboard.js';
@@ -34,6 +35,7 @@ window.dtr = {
   updateExportTemplateUI,
   addExportAdditionalInfoRow,
   openImportModal, previewImport, importParsedEntries,
+  handleImportFileSelect,
   setTodayDate, toggleEntryAbsent,
   setMeridiem, setEditMeridiem, updateEditOvertimePreview,
   // Admin

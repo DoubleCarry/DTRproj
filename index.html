@@ -438,13 +438,18 @@
 <div id="importModal" class="modal-overlay hidden">
   <div class="modal modal-wide">
     <div class="modal-header">
-      <div class="modal-icon"><div class="icon-wrap">📥</div><div><div class="modal-title">Import DTR Text</div><div class="modal-subtitle">Paste raw DTR lines to parse dates and time pairs</div></div></div>
+      <div class="modal-icon"><div class="icon-wrap">📥</div><div><div class="modal-title">Import DTR Text</div><div class="modal-subtitle">Supports CSV, TSV, pipe rows, or labeled lines (in/out)</div></div></div>
       <button class="modal-close" onclick="closeModal('importModal')">✕</button>
     </div>
     <div class="modal-body">
       <div class="input-group">
+        <label>Import from File (.csv/.txt)</label>
+        <input type="file" id="importFile" class="input-field" accept=".csv,.txt,text/csv,text/plain" onchange="window.dtr.handleImportFileSelect(event)">
+        <span class="input-hint">Choose a DTR export file, then click Preview.</span>
+      </div>
+      <div class="input-group">
         <label>Raw DTR Text</label>
-        <textarea id="importText" class="input-field import-textarea" placeholder="Example: 03/25/2026 8:00 AM - 5:00 PM&#10;Mar 26, 2026 08:30 17:45&#10;2026-03-27 absent"></textarea>
+        <textarea id="importText" class="input-field import-textarea" placeholder="Examples:&#10;03/25/2026 8:00 AM - 5:00 PM&#10;Mar 26, 2026 | 08:30 | 17:45&#10;2026-03-27,In: 0900,Out: 1800&#10;&quot;1&quot;,&quot;Jan 06, 2026&quot;,&quot;8:00 AM&quot;,&quot;5:00 PM&quot;&#10;2026-03-28 absent"></textarea>
       </div>
       <div class="table-wrap">
         <table><thead><tr><th>#</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Note</th></tr></thead><tbody id="importPreviewTbody"></tbody></table>

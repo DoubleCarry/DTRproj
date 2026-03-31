@@ -864,12 +864,109 @@ export function saveSettings() {
 
 /* ─── IMPORT ─── */
 function parseDtrText(raw) {
+  function splitDelimitedLine(line, delimiter = ',') {
+    const out = [];
+    let cur = '';
+    let q = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (q && line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          q = !q;
+        }
+      } else if (ch === delimiter && !q) {
+        out.push(cur.trim());
+        cur = '';
+      } else {
+        cur += ch;
+      }
+    }
+    out.push(cur.trim());
+    return out;
+  }
+
+  function cleanDateCell(v) {
+    return String(v || '')
+      .replace(/^"+|"+$/g, '')
+      .replace(/\s*\([^)]*\)\s*$/g, '')
+      .trim();
+  }
+
+  function cleanCell(v) {
+    return String(v || '').replace(/^"+|"+$/g, '').trim();
+  }
+
+  function parseTimeToken(rawToken) {
+    const token = cleanCell(rawToken).toUpperCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
+    if (!token) return null;
+    let normalized = token;
+    const hhmm = token.match(/^(\d{1,2})(\d{2})$/);
+    if (hhmm) normalized = `${hhmm[1]}:${hhmm[2]}`;
+    const hHmm = token.match(/^(\d{1,2})H(\d{2})$/);
+    if (hHmm) normalized = `${hHmm[1]}:${hHmm[2]}`;
+    return parseFlexibleTime(normalized);
+  }
+
+  function parseLabeledTimes(line) {
+    const inMatch = line.match(/\b(?:time\s*in|in)\s*[:=]\s*([0-9]{1,2}(?::?[0-9]{2})?\s*(?:AM|PM)?)\b/i);
+    const outMatch = line.match(/\b(?:time\s*out|out)\s*[:=]\s*([0-9]{1,2}(?::?[0-9]{2})?\s*(?:AM|PM)?)\b/i);
+    if (!inMatch || !outMatch) return null;
+    const tIn = parseTimeToken(inMatch[1]);
+    const tOut = parseTimeToken(outMatch[1]);
+    if (!tIn || !tOut) return null;
+    if (timeToMins(tOut) <= timeToMins(tIn)) return null;
+    return { tIn, tOut };
+  }
+
+  function parseDelimitedRow(line) {
+    const delim = line.includes('\t') ? '\t' : (line.includes('|') ? '|' : (line.includes(';') ? ';' : ','));
+    const cells = splitDelimitedLine(line, delim).map(cleanCell).filter(v => v !== '');
+    if (cells.length < 3) return null;
+
+    let date = null;
+    for (const c of cells) {
+      const parsed = parseFlexibleDate(cleanDateCell(c));
+      if (parsed) { date = parsed; break; }
+    }
+    if (!date) return null;
+
+    const whole = cells.join(' ');
+    const absent = /\b(absent|no work|nowork|leave)\b/i.test(whole);
+    if (absent) {
+      return { date, timeIn: '--', timeOut: '--', absent: true, note: 'Imported absent', source: 'import' };
+    }
+
+    const labeled = parseLabeledTimes(whole);
+    if (labeled) {
+      return { date, timeIn: labeled.tIn, timeOut: labeled.tOut, absent: false, note: 'Imported from structured text', source: 'import' };
+    }
+
+    const timeCandidates = whole.match(/\b\d{1,2}:\d{2}\s*(?:AM|PM)?\b|\b\d{1,2}\s*(?:AM|PM)\b|\b\d{3,4}\b/gi) || [];
+    const parsedTimes = timeCandidates.map(parseTimeToken).filter(Boolean);
+    if (parsedTimes.length < 2) return null;
+    const tIn = parsedTimes[0];
+    const tOut = parsedTimes[1];
+    if (timeToMins(tOut) <= timeToMins(tIn)) return null;
+    return { date, timeIn: tIn, timeOut: tOut, absent: false, note: 'Imported from table text', source: 'import' };
+  }
+
   const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
   const rows = [];
   for (const line of lines) {
+    if (/[,|\t;]/.test(line)) {
+      const structured = parseDelimitedRow(line);
+      if (structured) {
+        rows.push(structured);
+        continue;
+      }
+    }
+
     const dateMatch = line.match(/(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|[A-Za-z]{3,9}\s+\d{1,2},?\s+\d{2,4})/);
     if (!dateMatch) continue;
-    const date = parseFlexibleDate(dateMatch[1]);
+    const date = parseFlexibleDate(cleanDateCell(dateMatch[1]));
     if (!date) continue;
 
     const absent = /\b(absent|no work|nowork|leave)\b/i.test(line);
@@ -878,9 +975,15 @@ function parseDtrText(raw) {
       continue;
     }
 
+    const labeled = parseLabeledTimes(line);
+    if (labeled) {
+      rows.push({ date, timeIn: labeled.tIn, timeOut: labeled.tOut, absent: false, note: 'Imported from labeled text', source: 'import' });
+      continue;
+    }
+
     const withoutDate = line.replace(dateMatch[1], ' ');
-    const times = withoutDate.match(/\b\d{1,2}(?::\d{2})?\s*(?:AM|PM)?\b/gi) || [];
-    const parsedTimes = times.map(t => parseFlexibleTime(t)).filter(Boolean);
+    const times = withoutDate.match(/\b\d{1,2}:\d{2}\s*(?:AM|PM)?\b|\b\d{1,2}\s*(?:AM|PM)\b|\b\d{3,4}\b/gi) || [];
+    const parsedTimes = times.map(parseTimeToken).filter(Boolean);
     if (parsedTimes.length < 2) continue;
     const tIn = parsedTimes[0];
     const tOut = parsedTimes[1];
@@ -925,8 +1028,25 @@ function renderImportPreview(items) {
 export function openImportModal() {
   _importPreview = [];
   setVal('importText', '');
+  const fileInput = document.getElementById('importFile');
+  if (fileInput) fileInput.value = '';
   renderImportPreview([]);
   openModal('importModal');
+}
+
+export function handleImportFileSelect(event) {
+  const file = event?.target?.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const text = String(reader.result || '');
+    setVal('importText', text);
+    toast(`Loaded file: ${file.name}`, 'success');
+  };
+  reader.onerror = () => {
+    toast('Failed to read selected file.', 'error');
+  };
+  reader.readAsText(file);
 }
 
 export function previewImport() {
