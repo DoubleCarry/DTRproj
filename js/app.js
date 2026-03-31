@@ -11,7 +11,7 @@ import {
   openEditEntry, saveEditEntry, openImportModal, previewImport, importParsedEntries,
   setTodayDate, toggleEntryAbsent, setMeridiem, setEditMeridiem, updateEditOvertimePreview, updateExportTemplateUI, addExportAdditionalInfoRow,
 } from './userDashboard.js';
-import { renderAdminDashboard, showUserDetail, adminBackToOverview, openAddUserModal, handleAddUser, openEditUserGoal, saveEditUserGoal, adminDeleteUser, adminExportCSV, adminExportPrint } from './adminDashboard.js';
+import { renderAdminDashboard, showUserDetail, adminBackToOverview, openAddUserModal, handleAddUser, openEditUserGoal, saveEditUserGoal, adminDeleteUser, adminExportCSV, adminExportPrint, openAdminResetPasswordModal, adminResetUserPassword } from './adminDashboard.js';
 import { apiLogin, apiSignup, apiMe, hasApiToken, setApiToken } from './api.js';
 
 const THEME_KEY = 'dtr_theme';
@@ -41,6 +41,7 @@ window.dtr = {
   adminBackToOverview,
   openEditUserGoal, saveEditUserGoal,
   adminDeleteUser, adminExportCSV, adminExportPrint,
+  openAdminResetPasswordModal, adminResetUserPassword,
   showUserDetail,
   toggleTheme,
 };

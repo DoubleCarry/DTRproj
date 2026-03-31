@@ -32,6 +32,7 @@ Health check:
 - `POST /api/auth/login`
 - `GET /api/auth/me` (Bearer token)
 - `PUT /api/users/me/settings` (Bearer token)
+- `PUT /api/users/admin/reset-password` (Bearer token, admin only)
 - `GET /api/sessions/me` (Bearer token)
 - `POST /api/sessions/me` (Bearer token)
 - `PUT /api/sessions/me/:id` (Bearer token)

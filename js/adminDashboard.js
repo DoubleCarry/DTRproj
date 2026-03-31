@@ -10,6 +10,7 @@ import { calcStats, fmtDate, fmt12, fmtHM } from './utils.js';
 import { toast, openModal, closeModal, val, setVal, setText } from './ui.js';
 import { renderHistoryTable } from './userDashboard.js';
 import { exportCSV, exportPrint } from './export.js';
+import { apiAdminResetUserPassword } from './api.js';
 
 let _viewingUserId = null;
 
@@ -218,4 +219,34 @@ export function adminExportPrint() {
   const s = getSessions(_viewingUserId);
   if (!s.length) { toast('No records to export.', 'warning'); return; }
   exportPrint(u, s);
+}
+
+/* ─── ADMIN RESET USER PASSWORD ─── */
+export function openAdminResetPasswordModal() {
+  setVal('adminResetUsername', '');
+  setVal('adminResetPassword', '');
+  setVal('adminResetPasswordConfirm', '');
+  openModal('adminResetPasswordModal');
+}
+
+export function adminResetUserPassword() {
+  const username = val('adminResetUsername').trim().toLowerCase();
+  const newPassword = val('adminResetPassword');
+  const confirmPassword = val('adminResetPasswordConfirm');
+
+  if (!username) { toast('Username is required.', 'error'); return; }
+  if (!/^[a-z0-9_]+$/.test(username)) { toast('Invalid username format.', 'error'); return; }
+  if (!newPassword || !confirmPassword) { toast('Enter and confirm the new password.', 'error'); return; }
+  if (newPassword.length < 4) { toast('Password must be at least 4 characters.', 'error'); return; }
+  if (newPassword !== confirmPassword) { toast('Passwords do not match.', 'error'); return; }
+
+  apiAdminResetUserPassword(username, newPassword, confirmPassword).then(() => {
+    closeModal('adminResetPasswordModal');
+    setVal('adminResetUsername', '');
+    setVal('adminResetPassword', '');
+    setVal('adminResetPasswordConfirm', '');
+    toast(`Password reset for @${username}.`, 'success');
+  }).catch((e) => {
+    toast(e.message || 'Failed to reset password.', 'error');
+  });
 }

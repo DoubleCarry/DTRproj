@@ -64,6 +64,13 @@ export async function apiUpdateSettings(payload) {
   });
 }
 
+export async function apiAdminResetUserPassword(username, newPassword, confirmPassword) {
+  return request('/users/admin/reset-password', {
+    method: 'PUT',
+    body: JSON.stringify({ username, newPassword, confirmPassword }),
+  });
+}
+
 export async function apiListSessions() {
   return request('/sessions/me', { method: 'GET' });
 }

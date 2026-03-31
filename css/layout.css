@@ -234,6 +234,16 @@
   .main-content { padding: 1rem; }
   .topbar-clock { display: none; }
   .grid-4 { grid-template-columns: 1fr 1fr; }
+  .topbar-user-info { display: none; }
+  .topbar-user { padding: 0.28rem; }
+  .section-header { gap: 0.7rem; margin-bottom: 1rem; }
+  .section-title { font-size: 1.2rem; }
+  .modal { padding: 1.1rem; border-radius: var(--radius); }
+  .modal-header { margin-bottom: 1rem; }
+  .modal-footer { flex-wrap: wrap; }
+  .modal-footer .btn { flex: 1 1 100%; }
+  .table-card-header { padding: 0.85rem 1rem; }
+  .table-wrap table { min-width: 520px; }
 }
 @media (max-width: 400px) {
   .grid-4 { grid-template-columns: 1fr; }
@@ -394,6 +404,12 @@
   .entry-time-grid { grid-column: span 1; }
   .time-picker { grid-template-columns: 1fr auto 1fr; }
   .time-picker .select-field:last-child { grid-column: 1 / -1; }
+  .login-card { padding: 1.2rem; }
+  .login-title { font-size: 1.5rem; }
+  .admin-user-grid { grid-template-columns: 1fr; }
+  .user-card { padding: 1rem; }
+  .user-card-top { gap: 0.55rem; }
+  .user-card-hours { flex-direction: column; align-items: flex-start; gap: 0.3rem; }
 }
 
 /* ─── TABLE CARD ─── */

@@ -27,6 +27,13 @@ function toUserDTO(user) {
   };
 }
 
+function requireAdmin(req, res, next) {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  return next();
+}
+
 router.put('/me/settings', async (req, res) => {
   const body = req.body || {};
   const update = {
@@ -66,6 +73,32 @@ router.put('/me/settings', async (req, res) => {
 
   const updated = await User.findByIdAndUpdate(req.user._id, update, { new: true }).lean();
   return res.json({ user: toUserDTO(updated) });
+});
+
+router.put('/admin/reset-password', requireAdmin, async (req, res) => {
+  const { username = '', newPassword = '', confirmPassword = '' } = req.body || {};
+  const cleanUsername = String(username).trim().toLowerCase();
+  const cleanPassword = String(newPassword);
+  const cleanConfirm = String(confirmPassword);
+
+  if (!cleanUsername || !cleanPassword || !cleanConfirm) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  if (cleanPassword.length < 4) {
+    return res.status(400).json({ error: 'Password must be at least 4 chars' });
+  }
+  if (cleanPassword !== cleanConfirm) {
+    return res.status(400).json({ error: 'Passwords do not match' });
+  }
+
+  const target = await User.findOne({ username: cleanUsername });
+  if (!target) return res.status(404).json({ error: 'User not found' });
+  if (target.role === 'admin') return res.status(400).json({ error: 'Use settings to change admin password' });
+
+  target.passwordHash = await bcrypt.hash(cleanPassword, 10);
+  await target.save();
+
+  return res.json({ ok: true });
 });
 
 export default router;
