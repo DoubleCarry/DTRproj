@@ -2,7 +2,7 @@ const API_BASE_KEY = 'dtr_api_base';
 const TOKEN_KEY = 'dtr_api_token';
 
 function getApiBase() {
-  return localStorage.getItem(API_BASE_KEY) || 'http://localhost:4000/api';
+  return localStorage.getItem(API_BASE_KEY) || 'https://dtrproj.onrender.com/api';
 }
 
 function authHeaders() {
@@ -91,4 +91,5 @@ export async function apiDeleteSession(id) {
 export async function apiClearSessions() {
   return request('/sessions/me', { method: 'DELETE' });
 }
+
 
